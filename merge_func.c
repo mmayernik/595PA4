@@ -15,8 +15,8 @@ Node * create_node(int label, double x, double y, double c){
   node -> len_list = NULL;
   node -> x = x;
   node -> y = y;
-  node -> wire_l = 0;
-  node -> wire_r = 0;
+  node -> wire_l = -1;
+  node -> wire_r = -1;
   node -> t = 0;
   node -> merged = 0;
   return node;
@@ -244,12 +244,31 @@ void assign_xy(Node * child, Node * parent, double len){
 }
 
 void get_xy(Node * head){
+  double p1[4] = {head -> m_array[0], head -> m_array[0], head -> m_array[2], head -> m_array[2]};
+  double p2[4] = {head -> m_array[1], head -> m_array[1], head -> m_array[3], head -> m_array[3]};
+  double source[4] = {0,0,0,0};
+  double dist1 = det_len(p1, source);
+  double dist2 = det_len(p2, source);
+  if(dist1 > dist2){
   head -> m_array[0] = head -> m_array[1];
   head -> m_array[2] = head -> m_array[3];
+  }else{
+  head -> m_array[1] = head -> m_array[0];
+  head -> m_array[3] = head -> m_array[2];
+  }
   head -> x = ((head -> m_array)[1] - (head -> m_array)[3])/2.0;
   head -> y = ((head -> m_array)[1] + (head -> m_array)[3])/2.0;
+
   assign_xy(head -> left, head, head -> wire_l);
   assign_xy(head -> right, head, head -> wire_r);
+}
+
+void insert_source(Node ** head){
+  Node * bnode = create_node(-1, 0, 0, -1); //MUST MAKE THIS have the CAP for a buffer at some point 
+  Node* snode = create_node(-1, 0, 0, -1); //source node
+  snode->left = bnode;
+  bnode->left = *head;
+  *head = snode;
 }
 
 double absolute(double x){

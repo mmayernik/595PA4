@@ -41,17 +41,18 @@ int main(int argc, char ** argv){
 
   //calculate xy coords
   get_xy(head);
-
+  insert_source(&head);
   //verify topology
-  int count = 0;
-  check_l(head, &count);
-  int tot_len = 0;
-  total_wire_len(head, &tot_len);
-  printf("total length: %d\n", tot_len);
+  //int count = 0;
+  //check_l(head, &count);
+  //int tot_len = 0;
+  //total_wire_len(head, &tot_len);
+  //printf("total length: %d\n", tot_len);
   
   //print output
   post_order_len(out_fp1, head);
-  print_binary(out_fp2, head);
+  //print_binary(out_fp2, head);
+  post_order_xy(out_fp2, head);
   
   free(bounds);
   destroy_tree(head);

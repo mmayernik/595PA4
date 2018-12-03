@@ -16,6 +16,7 @@ typedef struct _Node{
   struct _HeapPoint * len_list; //hold list of all lens
   int lens;
   int merged;
+  int polarity;
 } Node;
 
 /*
@@ -113,4 +114,10 @@ void post_order_len(FILE * fp, Node * head);
 void post_order_xy(FILE * fp, Node * head);
 void print_pre_order(Node * head);
 void print_test(FILE * fp, Node * head);
+
+
+//***PA 4 FUNCTIONS ***
+void insert_source(Node ** head);
+
+
 #endif

@@ -36,12 +36,12 @@ int main(int argc, char ** argv){
 
   //create list of sinks
   Node * head = create_array(in_fp, bounds);
-
+  int count = bounds -> dim;
   //preform merging
   greedy_master(bounds, &head);
 
   //calculate xy coords
-  get_xy(head);
+  get_xy(head,&count);
   //insert_source(&head);
   //verify topology
   //int count = 0;

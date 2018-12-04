@@ -60,6 +60,7 @@ typedef struct _Bounds{
   double inv_input_cap; //from first input file
   double inv_output_cap; //from first input file
   double inv_output_res; //from first input file
+  double tau_const;
 } Bounds;
 
 
@@ -86,7 +87,7 @@ void free_bucket_array(Bucket ** bucket_list, Bounds * bounds);
 void free_heap(Heaper ** heap, int * heap_size);
 int get_new_head(Bucket ** bucket_list, Bounds * bounds, Node ** new_node);
 void greedy_master(Bounds * bounds, Node ** head);
-void get_xy(Node * head);
+void get_xy(Node * head, int * count);
 void free_hp(Node * node);
 void total_wire_len(Node * node, int * tot_len);
 
@@ -98,7 +99,7 @@ Node * create_node(int label, double rd, double r, double c);
 Node * create_array(FILE * in_fp, Bounds * bounds);
 void det_bucket_dim(Node * head, Bounds * bounds);
 void create_bucket_list(Bucket *** list, int dim);
-void assign_xy(Node * child, Node * parent, double len);
+void assign_xy(Node * child, Node * parent, double len, int * count);
 void pre_order_merge(Node *n, double rd, double r, double c);
 double det_len(double * m1, double * m2);
 void destroy_tree(Node * head);

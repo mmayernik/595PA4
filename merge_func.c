@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "zst.h"
+#include "pa4.h"
 
 
 Node * create_node(int label, double x, double y, double c){
@@ -19,6 +19,8 @@ Node * create_node(int label, double x, double y, double c){
   node -> wire_r = -1;
   node -> t = 0;
   node -> merged = 0;
+  node -> parallel = 0;
+  node -> polarity = 0;
   return node;
 }
 
@@ -268,6 +270,8 @@ void insert_source(Node ** head){
   Node* snode = create_node(-1, 0, 0, -1); //source node
   snode->left = bnode;
   bnode->left = *head;
+  bnode->parallel = 1;
+  snode->parallel = 1;
   *head = snode;
 }
 

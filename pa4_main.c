@@ -7,7 +7,7 @@
 //compile with zst.c zst_main.c and merge_func.c
 int main(int argc, char ** argv){
   //intput handling
-  if(argc != 4){
+  if(argc != 6){
     printf("Incorrect number of arguements");
     printf("%d\n", argc);
     return EXIT_FAILURE;
@@ -18,9 +18,9 @@ int main(int argc, char ** argv){
   bounds -> dim = 0;
   parameter_input_files(argv[1], argv[2], bounds);
 
-  FILE * in_fp = fopen(argv[3], "w");
+  FILE * in_fp = fopen(argv[3], "r");
 	if(in_fp == NULL){
-		return EXIT_FAILURE;
+	  return EXIT_FAILURE;
 	}
   FILE * out_fp1 = fopen(argv[4], "w");
 	if(out_fp1 == NULL){

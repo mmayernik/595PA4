@@ -176,7 +176,7 @@ void det_mvalues(double * m1, double * m2, double r1, double r2, double * output
   output[3] = temp2[2];
 }
 
-void merge_arcs(Node * n, double rd, double r, double c){
+void merge_arcs(Node * n, double r, double c){
   double x = 0;
   double L = det_len((n -> left) -> m_array, (n -> right) -> m_array);
   if(L == 0){
@@ -224,7 +224,7 @@ void determine_shortest(double * point, double * m){
   }
 }
  
-void assign_xy(Node * child, Node * parent, double len){
+void assign_xy(Node * child, Node * parent, double len, int * count){
   if(child -> label != -1){
     return;
   }
@@ -241,16 +241,20 @@ void assign_xy(Node * child, Node * parent, double len){
     child -> x = ((child -> m_array)[0]-(child -> m_array)[2])/2.0;
     child -> y = ((child ->m_array)[0]+(child -> m_array)[2])/2.0;
   }
-  assign_xy(child -> left, child, child -> wire_l);
-  assign_xy(child -> right, child, child -> wire_r);
+  *count += 1;
+  parent -> label = *count;
+  assign_xy(child -> left, child, child -> wire_l, count);
+  assign_xy(child -> right, child, child -> wire_r, count);
 }
 
-void get_xy(Node * head){
+void get_xy(Node * head, int * count){
   double p1[4] = {head -> m_array[0], head -> m_array[0], head -> m_array[2], head -> m_array[2]};
   double p2[4] = {head -> m_array[1], head -> m_array[1], head -> m_array[3], head -> m_array[3]};
   double source[4] = {0,0,0,0};
   double dist1 = det_len(p1, source);
   double dist2 = det_len(p2, source);
+  *count +=1;
+  head -> label = *count;
   if(dist1 > dist2){
   head -> m_array[0] = head -> m_array[1];
   head -> m_array[2] = head -> m_array[3];
@@ -261,8 +265,8 @@ void get_xy(Node * head){
   head -> x = ((head -> m_array)[1] - (head -> m_array)[3])/2.0;
   head -> y = ((head -> m_array)[1] + (head -> m_array)[3])/2.0;
 
-  assign_xy(head -> left, head, head -> wire_l);
-  assign_xy(head -> right, head, head -> wire_r);
+  assign_xy(head -> left, head, head -> wire_l, count);
+  assign_xy(head -> right, head, head -> wire_r, count);
 }
 
 void insert_source(Node ** head){
@@ -348,13 +352,94 @@ void print_pre_order(Node * head){
 
 //PA 4 WELCOME TO THE JUNGLE ///
 
-/*
-bool need_i(Node* head){
+void crazy_loop(Node * head, Bounds * bounds){
+  //find length for zero skew
+  double max_tau = 0.8 * 100 * pow(10, -12);
+  double tau_L = calc_tau(head->left, head->wire_l, bounds);
+  double tau_R = calc_tau(head->right, head->wire_r, bounds);
+  while(need_i(head, bounds)){
+    //left tau
+    if(tau_L >= max_tau){
+      insert_i(&head, head->left, bounds);
+    }
+    //right tau 
+    if(tau_R >= max_tau){
+      insert_i(&head, head->right, bounds);
+    }
+    //merge
+    if(tau_R < max_tau && tau_L < max_tau){
+      if(tau_R > tau_L){
+	insert_i(&head, head->right, bounds);
+      }
+      else{
+	insert_i(&head, head->left, bounds);
+      }
+      merge_arcs(head, bounds-> r, bounds->c);
+    }
+    tau_L = calc_tau(head->left, head->wire_l, bounds);
+    tau_R = calc_tau(head->right, head->wire_r, bounds);
+  }
 
-}
-
-double calc_tau(Node * head){
+  //FINAL POLARITY CHECK 
+  if(head->right->polarity != head->left->polarity){
+    if(tau_R > tau_L){
+	insert_i(&head, head->right, bounds);
+      }
+      else{
+	insert_i(&head, head->left, bounds);
+      }
+    merge_arcs(head, bounds->r, bounds->c); 
+  }
+						 
   
-
 }
-*/
+
+bool need_i(Node* head, Bounds * bounds){
+  double tau = calc_tau(head, 0, bounds);
+  if(tau > 0.8 * 100 * pow(10, -12)){
+      return true;
+    }
+  if(head->left->polarity != head->right->polarity){
+    return true;
+  }
+  return false;
+}
+
+double calc_tau(Node * n, double wire_len, Bounds * bounds){
+  //tau = nrc
+  double wire_r = bounds->r * wire_len;
+  double wire_c = bounds->c * wire_len / 2;
+  double total_r = wire_r; //+ n->r;
+  double total_c = wire_c + n->c;
+  double tau = bounds->tau_const * total_r * total_c;
+  return tau;
+}
+
+void insert_i(Node ** head, Node * child, Bounds * bounds){
+  
+  Node * i = create_node(-1, 0, 0, bounds->inv_output_cap);
+  i->left = child;
+  if(i->left == (*head)->left){
+    (*head)->left = i;
+    i->wire_l = i_wire(*head, bounds);
+    
+  }
+  else{
+    (*head)->right = i;
+    i->wire_r = i_wire(*head, bounds);
+  }
+  
+  //UPDATE HEADS RESISTANCE AND CAPACITANCE
+}
+
+double i_wire(Node * head, Bounds * bounds){
+  double r = bounds->r;
+  double C = bounds->c;
+  double cn = head->c;
+  double rn = 1; //head->r; //FIXXXX
+  double a = r * C / 2;
+  double b = cn * r + C * rn /2;
+  double c = rn * cn - 100 * pow(10, -12) / bounds->tau_const;
+  double L = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
+  return L;
+}

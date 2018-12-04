@@ -1,6 +1,7 @@
 #ifndef PA4_H
 #define PA4_H
 #include <stdio.h>
+#include<stdbool.h>
 
 /*
   Node:
@@ -61,6 +62,7 @@ typedef struct _Bounds{
   double inv_output_cap; //from first input file
   double inv_output_res; //from first input file
   double tau_const;
+
 } Bounds;
 
 
@@ -105,7 +107,7 @@ double det_len(double * m1, double * m2);
 void destroy_tree(Node * head);
 void build_sq(double * m, double r, double * sq);
 void det_mvalues(double * m1, double * m2, double r1, double r2, double * output);
-void merge_arcs(Node * n, double rd, double r, double c);
+void merge_arcs(Node * n, double r, double c);
 void check_l(Node * head, int * count);
 double absolute(double x);
 int intersect(double m1_0, double m1_1, double m2_0, double m2_1);
@@ -127,5 +129,10 @@ void print_spicey(FILE * fp, Node * head);
 void insert_source(Node ** head);
 //int print_spice_netlist(int * curr_label, Node * root);
 void parameter_input_files(char* input1, char* input2, Bounds *);
+void crazy_loop(Node * head, Bounds * bounds);
+bool need_i(Node* head, Bounds * bounds);
+double calc_tau(Node * n, double wire_len, Bounds * bounds);
+void insert_i(Node ** head, Node * child, Bounds * bounds);
+double i_wire(Node * head, Bounds * bounds);
 
 #endif

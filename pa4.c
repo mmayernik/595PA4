@@ -419,7 +419,7 @@ Node * greedy_merge(Heaper ** heap, int * heap_size, Bucket ** bucket_list, Boun
     new_node = create_node(-1, 0, 0, 0);
     new_node -> left = min_dis -> node1;
     new_node -> right = min_dis -> node2;
-    merge_arcs(new_node, bounds->rd, bounds->r, bounds->c); //merge arcs together
+    merge_arcs(new_node, bounds->r, bounds->c); //merge arcs together
     despan_Node(bucket_list, min_dis -> node1, bounds); //create new spanning in buckets
     despan_Node(bucket_list, min_dis -> node2, bounds);
     span_Node(bucket_list, new_node, bounds);

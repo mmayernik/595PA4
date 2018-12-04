@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "pa4.h"
-
-
+ 
 
 //compile with zst.c zst_main.c and merge_func.c
 int main(int argc, char ** argv){
@@ -13,28 +12,27 @@ int main(int argc, char ** argv){
     printf("%d\n", argc);
     return EXIT_FAILURE;
   }
-  FILE * in_fp = fopen(argv[1], "r");
-  if(in_fp == NULL){
-    printf("Could not open input file");
-    return EXIT_FAILURE;
-  }
-  FILE * out_fp1 = fopen(argv[2], "w");
-  if(out_fp1 ==  NULL){
-    printf("Could not open first output file");
-    fclose(in_fp);
-    return EXIT_FAILURE;
-  }
-  FILE * out_fp2 = fopen(argv[3], "w");
-  if(out_fp2 == NULL){
-    printf("Could not open second output file");
-    fclose(in_fp);
-    fclose(out_fp1);
-    return EXIT_FAILURE;
-  }
 
   //create struc for global use
   Bounds * bounds = malloc(sizeof(Bounds));
   bounds -> dim = 0;
+  parameter_input_files(argv[1], argv[2], bounds);
+
+  FILE * in_fp = fopen(argv[3], "w");
+	if(in_fp == NULL){
+		return EXIT_FAILURE;
+	}
+  FILE * out_fp1 = fopen(argv[4], "w");
+	if(out_fp1 == NULL){
+		return EXIT_FAILURE;
+	}
+  FILE * out_fp2 = fopen(argv[5], "w");
+	if(out_fp2 == NULL){
+		return EXIT_FAILURE;
+	}
+
+
+ 
 
   //create list of sinks
   Node * head = create_array(in_fp, bounds);

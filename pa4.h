@@ -57,15 +57,11 @@ typedef struct _Bucket{
 typedef struct _Bounds{
   int dim, heap_max;
   double m1_min,m1_max,rd,r,c,m2_min,m2_max,m1_interval,m2_interval;
+  double inv_input_cap; //from first input file
+  double inv_output_cap; //from first input file
+  double inv_output_res; //from first input file
 } Bounds;
 
-typedef struct _givens {
-	double inv_input_cap; //from first input file
-	double inv_output_cap; //from first input file
-	double inv_output_res; //from first input file
-	double res_per_u_length; //from second input file
-	double cap_per_u_length; //from second input file
-}givens;
 
 
 //********PA3 functions ********
@@ -129,6 +125,6 @@ void print_spicey(FILE * fp, Node * head);
 //***PA 4 FUNCTIONS ***
 void insert_source(Node ** head);
 //int print_spice_netlist(int * curr_label, Node * root);
-void parameter_input_files(char* input1, char* input2);
+void parameter_input_files(char* input1, char* input2, Bounds *);
 
 #endif

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "pa4.h"
-
+#include <stdbool.h>
 
 Node * create_node(int label, double x, double y, double c){
   Node * node =  malloc(sizeof(Node));
@@ -343,3 +343,18 @@ void print_pre_order(Node * head){
   print_pre_order(head -> left);
   print_pre_order(head -> right);
 }
+
+
+
+//PA 4 WELCOME TO THE JUNGLE ///
+
+/*
+bool need_i(Node* head){
+
+}
+
+double calc_tau(Node * head){
+  
+
+}
+*/

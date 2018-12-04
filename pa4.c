@@ -3,6 +3,29 @@
 #include <math.h>
 #include "pa4.h"
 
+void parameter_input_files(char* input1, char* input2, Bounds * bounds){
+	//I'm putting these in the same function because theyre all just givens so 
+	//it makes sense to me to put them in a single struct
+	//Shouldn't be difficult to separate if we choose to
+  FILE * fp1 = fopen(input1, "r");
+	if(fp1 == NULL){
+	  return;
+	}
+
+	FILE * fp2 = fopen(input2, "r");
+	if(fp2 ==NULL){
+		fclose(fp1);
+		return;
+	}
+
+	fscanf(fp1, "%le %le %le\n", &bounds -> inv_input_cap, &bounds -> inv_output_cap, &bounds -> inv_output_res);
+	fscanf(fp2, "%le %le\n", &bounds -> r, &bounds -> c);
+	
+	fclose(fp1);
+	fclose(fp2);
+
+}
+
 Bucket * pop_bucket(Bucket ** head){
   if(head == NULL){
     return NULL;
@@ -19,7 +42,6 @@ void validate_index(int * value, Bounds * bounds){
 }
 
 Node * create_array(FILE * in_fp, Bounds * bounds){
-  fscanf(in_fp, "%le %le %le\n", &(bounds -> rd), &(bounds -> r), &(bounds -> c)); //get first line
   Node * dummy = NULL;
   Node ** head_ptr = &dummy;
   int ch, label;

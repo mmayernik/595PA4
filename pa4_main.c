@@ -50,7 +50,7 @@ int main(int argc, char ** argv){
   //int tot_len = 0;
   //total_wire_len(head, &tot_len);
   //printf("total length: %d\n", tot_len);
-  print_tree(head);
+  //print_tree(head);
   //print output
   post_order_len(out_fp1, head);
   //print_spicey(out_fp2, head);
@@ -84,8 +84,8 @@ void print_tree(Node * head){
   if(head == NULL){
     return;
   }
-  printf("label: %d  ", head -> label);
-  printf("parallel: %d\n", head->parallel);
   print_tree(head -> left);
   print_tree(head -> right);
+  printf("label: %d  polarity: %d  ", head -> label, head -> polarity);
+  printf("parallel: %d\n", head->parallel);
 }

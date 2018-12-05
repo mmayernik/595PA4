@@ -244,7 +244,7 @@ void assign_xy(Node * child, Node * parent, double len, int * count){
     child -> y = ((child ->m_array)[0]+(child -> m_array)[2])/2.0;
   }
   *count += 1;
-  parent -> label = *count;
+  child -> label = *count;
   assign_xy(child -> left, child, child -> wire_l, count);
   assign_xy(child -> right, child, child -> wire_r, count);
 }
@@ -273,23 +273,11 @@ void get_xy(Node * head, int * count){
 
 void insert_source(Node ** head){
   Node * bnode = create_node(-1, 0, 0, -1); //MUST MAKE THIS have the CAP for a buffer at some point
-  //Node * bnode2 = create_node(-1, 0, 0, -1);
   Node* snode = create_node(-1, 0, 0, -1); //source node
-  
   snode->left = bnode;
   bnode->left = *head; 
-  //bnode2->left = *head;
-  
   bnode->parallel = 1;
-  //bnode2->parallel = 1;
   snode->parallel = 1;
-
-  /*
-  bnode->wire_l = snode->wire_l / 3;
-  bnode2->wire_l = snode->wire_l / 3;
-  snode->wire_l = snode->wire_l - bnode->wire_l - bnode2->wire_l;
-  */
-  
   *head = snode;
 }
 
@@ -368,11 +356,15 @@ void print_pre_order(Node * head){
 
 void crazy_loop(Node * head, Bounds * bounds){
   //find length for zero skew
+  merge_arcs(head, bounds->r, bounds->c);
   double max_tau = 0.8 * 100 * pow(10, -12);
   double tau_L = calc_tau(head->left, head->wire_l, bounds);
   double tau_R = calc_tau(head->right, head->wire_r, bounds);
+  printf("this is taul: %le taur: %le\n", tau_L, tau_R);
+  //printf("%le, %le\n", head -> wire_l,  head -> wire_r);
   while(need_i(head, bounds)){
     //left tau
+    printf("we inserted oh no!\n");
     if(tau_L >= max_tau){
       insert_i(&head, head->left, bounds);
     }
@@ -388,14 +380,15 @@ void crazy_loop(Node * head, Bounds * bounds){
       else{
 	insert_i(&head, head->left, bounds);
       }
-      merge_arcs(head, bounds-> r, bounds->c);
     }
+    merge_arcs(head, bounds-> r, bounds->c);
     tau_L = calc_tau(head->left, head->wire_l, bounds);
     tau_R = calc_tau(head->right, head->wire_r, bounds);
+    printf("this is taul: %le taur: %le\n", tau_L, tau_R);
   }
-
   //FINAL POLARITY CHECK 
   if(head->right->polarity != head->left->polarity){
+     printf("we inserted oh no\n");
     if(tau_R > tau_L){
 	insert_i(&head, head->right, bounds);
       }
@@ -408,12 +401,15 @@ void crazy_loop(Node * head, Bounds * bounds){
 
 bool need_i(Node* head, Bounds * bounds){
   double tau = calc_tau(head, 0, bounds);
+  printf("r: %le\n", head -> r* head -> c);
+  printf("plz make sense %le %le\n",  0.8 * 100 * pow(10, -12), tau);
   if(tau > 0.8 * 100 * pow(10, -12)){
+    printf("tau is a biggie\n");
       return true;
     }
-  if(head->left->polarity != head->right->polarity){
+  /*if(head->left->polarity != head->right->polarity){
     return true;
-  }
+    }*/
   return false;
 }
 
@@ -421,32 +417,35 @@ double calc_tau(Node * n, double wire_len, Bounds * bounds){
   //tau = nrc
   double wire_r = bounds->r * wire_len;
   double wire_c = bounds->c * wire_len / 2;
-  double total_r = wire_r; //+ n->r;
+  double total_r = wire_r + n -> r; //+ n->r;
   double total_c = wire_c + n->c;
   double tau = bounds->tau_const * total_r * total_c;
-  printf("%le %le %le \n", total_r, total_c, bounds->tau_const);
+  //printf("%le\n", tau);
+  //printf("%le %le %le \n", total_r, total_c, bounds->tau_const);
   return tau;
 }
 
 void insert_i(Node ** head, Node * child, Bounds * bounds){
-  
   Node * i = create_node(-1, 0, 0, bounds->inv_output_cap);
-  i->r = bounds->inv_output_res;
+  i-> parallel = 1;
+  i-> polarity = child->polarity == 1 ? 0 : 1;  
+  i->r = 0;//bounds->inv_output_res;
   i->left = child;
-  if(i->left == (*head)->left){
+  if(i->left == (*head)->left){ //insert inverter on left of parent node
     (*head)->left = i;
     i->wire_l = i_wire(*head, bounds);
-    if((*head)->wire_l < i->wire_l){
+    if((*head)->wire_l < i->wire_l){ //see if the length is too big
       i->wire_l = (*head)->wire_l; 
     }
   }
-  else{
+  else{//insert inverter on right of parent node
     (*head)->right = i;
-    i->wire_r = i_wire(*head, bounds);
+    i->wire_l = i_wire(*head, bounds);
     if((*head)->wire_r < i->wire_l){
       i->wire_l = (*head)->wire_r; 
     }
   }
+  i_loco(i, *head, child, i-> wire_l);
 }
 
 double i_wire(Node * head, Bounds * bounds){
@@ -461,7 +460,7 @@ double i_wire(Node * head, Bounds * bounds){
   return L;
 }
 
-void i_loco(Node * i, Node * parent, Node * child, double length, Bounds * bounds){
+void i_loco(Node * i, Node * parent, Node * child, double length){
   //determines location for the buffer to be placed at
   int point_num = _choose_pt(child, parent -> m_array);
   double start[4] = {child ->m_array[0+point_num], child -> m_array[0+point_num],

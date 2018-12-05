@@ -135,5 +135,5 @@ double calc_tau(Node * n, double wire_len, Bounds * bounds);
 void insert_i(Node ** head, Node * child, Bounds * bounds);
 double i_wire(Node * head, Bounds * bounds);
 int _choose_pt(Node * source, double * dest);
-void i_loco(Node * i, Node * parent, Node * child, double length, Bounds * bounds);
+void i_loco(Node * i, Node * parent, Node * child, double length);
 #endif

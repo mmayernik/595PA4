@@ -7,9 +7,12 @@
 #include <unistd.h>
 
 //Spice Primary Functions
-double * simulate_netlist(Node * root);
 
-int create_spice_files(Node * root);
+int custom_netlist(Node * root,double length_to_parent);
+
+int create_spice_files(Node * root,double length_to_parent);
+
+double * simulate_netlist(Node * root, double length_to_parent);
 
 //Spice Helper Functions
 
@@ -20,7 +23,5 @@ int Spice_nelist_Koh();
 double * parse_results();
 
 Node * Build_Tree();
-
-int custom_netlist(Node * root);
 
 

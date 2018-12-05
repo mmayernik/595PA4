@@ -1,6 +1,8 @@
 
 #include "spice.h"
 #include "pa4.h"
+#include <float.h>
+
 //#include "merge_func.c"
 
 /*
@@ -193,7 +195,7 @@ double * parse_results(){
 	FILE * SPICY_BOI = fopen("Simulation_Return.txt", "r");
 
 	//Initialize Double Array
-	int n = 3;
+	int n = 4;
 	double * results = (double *)malloc(n * sizeof(double));
 	char start_line[255];
 	char ch;
@@ -201,6 +203,7 @@ double * parse_results(){
 	double temp_max = 0.0f;
 	double max_delay = 0.0f;
 	double max_slew = 0.0f;
+	double min_delay = DBL_MAX;
 
 
 	//Search for iavg
@@ -220,10 +223,10 @@ double * parse_results(){
     	if(strcmp(start_line, "delay") == 0){
     		fscanf(SPICY_BOI, "= %le\n",&temp_max);
     		max_delay = (temp_max > max_delay) ? temp_max : max_delay;
+		min_delay = (temp_max < min_delay) ? temp_max : min_delay;
     	}
-
-    	
-    	if((strcmp(start_line, "rslew") == 0) || (strcmp(start_line, "fslew") == 0)){
+    	start_line[4] = '\0';
+    	if((strcmp(start_line, "slew") == 0)){ //|| (strcmp(start_line, "rslew") == 0) || (strcmp(start_line, "fslew") == 0)){
     		fscanf(SPICY_BOI, "= %le\n",&temp_max);
     		max_slew = (temp_max > max_slew) ? temp_max : max_slew;
     	}
@@ -231,11 +234,23 @@ double * parse_results(){
     	//fscanf(SPICY_BOI, "%s\n",start_line);
     
    }
-   fprintf(stdout, "Max delay : %le\n",max_delay );
+   fprintf(stdout, "Max Delay : %le\n",max_delay );
+   fprintf(stdout, "Min Delay : %le\n", min_delay);
+   fprintf(stdout, "Tree Skew : %le\n", max_delay - min_delay);
    fprintf(stdout, "Max Slew : %le\n",max_slew );
+
    	results[1] = max_delay;
    	results[2] = max_slew;
-	//Close the File
+	results[3] = max_delay - min_delay;
+
+
+	/*Return Vector
+	results[0] = iRMS
+	results[1] = max_delay;
+   	results[2] = max_slew;
+	results[3] = max_delay - min_delay = tree skew
+
+	*/
 	fclose(SPICY_BOI);
 
 
@@ -267,9 +282,9 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 			fprintf(print_file,".ic v(n%d_0)=%d\n",root->label, (root->polarity)% 2);
 
 			if(((root->polarity)% 2) == 1){
-				fprintf(print_file, ".measure tran fslew%d trig v(n%d_0) val='0.9' fall=1 targ v(n%d_0) val='0.1' fall=1\n",root->label,root->label,root->label );
+				fprintf(print_file, ".measure tran slew%d trig v(n%d_0) val='0.9' fall=1 targ v(n%d_0) val='0.1' fall=1\n",root->label,root->label,root->label );
 			} else {
-				fprintf(print_file, ".measure tran rslew%d trig v(n%d_0) val='0.1' rise=1 targ v(n%d_0) val='0.9' rise=1\n",root->label,root->label,root->label );
+				fprintf(print_file, ".measure tran slew%d trig v(n%d_0) val='0.1' rise=1 targ v(n%d_0) val='0.9' rise=1\n",root->label,root->label,root->label );
 			}
 
 		}

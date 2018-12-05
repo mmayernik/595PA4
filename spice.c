@@ -149,8 +149,10 @@ int custom_netlist(Node * root){
 	fprintf(Spicy_Boi, SPICY_SETUP);
 	fprintf(Spicy_Boi, SPICY_INIT);
 
+	//Initialize Source Inverter
+	fprintf(print_file, "xi_1 n0 ni_0 vdd inv0\n", root->label, i, input_label, root->label);
 
-	print_spice_netlist(Spicy_Boi, root, "n0", 0.0f, 1.0000000000e-04, 2.0000000000e-19);
+	print_spice_netlist(Spicy_Boi, root, "ni_0", 0.0f, 1.0000000000e-04, 2.0000000000e-19);
 
 	fprintf(Spicy_Boi, ".measure TRAN iavg AVG i(vdd) FROM=0.0n TO=3.0n\n.measure TRAN irms RMS i(vdd) FROM=0.0n TO=3.0n\n.end\n" );
 

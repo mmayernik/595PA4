@@ -173,7 +173,7 @@ Node * Build_Tree(){
 
 	last = source;
 
-	for(int i = 1; i < 70; i++){
+	for(int i = 1; i < 10; i++){
 		
 		last->wire_l = 1850000;
 		last->wire_r = -1;
@@ -240,8 +240,9 @@ double * parse_results(){
    fprintf(stdout, "Max Slew : %le\n",max_slew );
 
    	results[1] = max_delay;
-   	results[2] = max_slew;
-	results[3] = max_delay - min_delay;
+	results[2] = min_delay;
+   	results[3] = max_slew;
+	
 
 
 	/*Return Vector
@@ -339,7 +340,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 		*/
 	
 
-	if((root->left == NULL) && (root->right == NULL)){
+	if((root->right == NULL)){
 			//This is an ending node. Therefore, place capacitor.
 			fprintf(print_file, "c%d_3 n%d_1 0 %le \n", root->label, root->label, root->c);
 
@@ -351,7 +352,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 
 		*/
 			fprintf(print_file, ".measure tran delay%d trig v(n0) val='0.5' cross=1 targ v(%s) val='0.5' cross=1\n",root -> label, pass_label );
-	}
+	} else {
 	
 	if(print_spice_netlist(print_file, root->left, pass_label,root->wire_l, r_unit, c_unit) != 0){
 		return -1;
@@ -361,6 +362,8 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 		if(print_spice_netlist(print_file, root->right, pass_label,root->wire_r, r_unit, c_unit) != 0){
 			return -1;
 		}
+	}
+
 	}
 
 

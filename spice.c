@@ -279,19 +279,38 @@ double * parse_results(){
 int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, double length_to_parent, double r_unit, double c_unit){
 	char pass_label[255] = "";
 
+	strcpy(pass_label, input_label);
+
 	//Return if NULL
 	if(root == NULL){
 		return 0;
 	}
-		/*
-		Create Inverters
+
+	//Insert PI Model
+	if(length_to_parent > 0.0f){
+			//Pi model wire
+			fprintf(print_file, "r%d %s n%d_1 %le\n", root->label, input_label, root->label, length_to_parent * r_unit);
+			fprintf(print_file, "c%d_1 %s 0 %le \n", root->label, input_label,length_to_parent * c_unit);
+			fprintf(print_file, "c%d_2 n%d_1 0 %le \n", root->label, root->label, length_to_parent * c_unit);
+			
+			sprintf(pass_label,"n%d_1", root->label);
+
+	}
+
+	//Is current node a sink?
+	if((root -> parallel == 0) && (root -> left == NULL) && (root -> right == NULL)){
+		//For Delay Measurement
+		fprintf(print_file, "c%d_3 %s 0 %le \n", root->label, pass_label, root->c);
+		fprintf(print_file, ".measure tran delay%d trig v(n0) val='0.5' cross=1 targ v(%s) val='0.5' cross=1\n",root -> label, pass_label );
 		
-			Format: label input output vdd inv0 | example -> x1 nout0 nout1 vdd inv0
-		*/
-		if(root -> parallel > 0){
-			for(int i = 0; i < root->parallel; i++){
+
+	} 
+	//Is current node a buffer?
+	else if (root -> parallel > 0){
+
+		for(int i = 0; i < root->parallel; i++){
 				//Print the Inverters
-				fprintf(print_file, "x%d_%d %s n%d_0 vdd inv0\n", root->label, i, input_label, root->label);
+				fprintf(print_file, "x%d_%d %s n%d_0 vdd inv0\n", root->label, i, pass_label, root->label);
 
 			}
 			
@@ -302,8 +321,37 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 			} else {
 				fprintf(print_file, ".measure tran slew%d trig v(n%d_0) val='0.1' rise=1 targ v(n%d_0) val='0.9' rise=1\n",root->label,root->label,root->label );
 			}
+		
+	} 
+	//Current node must be a joint
+	else {
 
+		if(print_spice_netlist(print_file, root->left, pass_label,root->wire_l, r_unit, c_unit) != 0){
+			return -1;
 		}
+
+		if(root->wire_r != -1.0f){
+			if(print_spice_netlist(print_file, root->right, pass_label,root->wire_r, r_unit, c_unit) != 0){
+				return -1;
+			}
+		}
+
+		
+	
+	}
+		/*
+		Create Inverters
+		
+			Format: label input output vdd inv0 | example -> x1 nout0 nout1 vdd inv0
+		*/
+
+		/*
+
+		Measurements
+
+		Format: label input output vdd inv0 | example -> x1 nout0 nout1 vdd inv0
+
+		*/
 
 		/*
 		Create Resistors
@@ -311,23 +359,6 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 		Format: ('r' + label) input output resistance | example -> r6_3 n5_0 n6_3 4.166667e+01
 		*/
 
-		if(length_to_parent > 0.0f){
-
-			//Pi model wire
-			fprintf(print_file, "r%d %s n%d_1 %le\n", root->label, input_label, root->label, length_to_parent * r_unit);
-			fprintf(print_file, "c%d_1 %s 0 %le \n", root->label, input_label,length_to_parent * c_unit);
-			fprintf(print_file, "c%d_2 n%d_1 0 %le \n", root->label, root->label, length_to_parent * c_unit);
-
-		}
-
-		if(length_to_parent == 0.0f && (root -> parallel == 0)){
-			strcpy(pass_label, input_label);
-		} else{
-			sprintf(pass_label,"n%d_%d",root->label,(root -> parallel > 0) ? 0 : 1);
-			if(length_to_parent != 0){
-				fprintf(print_file,".ic v(n%d_1)=%d\n",root->label, (root->polarity + 1) % 2);
-			}
-		}
 
 		/*
 
@@ -353,33 +384,6 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 
 
 		*/
-	
-
-	if((root->right == NULL)){
-			//This is an ending node. Therefore, place capacitor.
-			fprintf(print_file, "c%d_3 %s 0 %le \n", root->label, input_label, root->c);
-
-		/*
-
-		Measurements
-
-		Format: label input output vdd inv0 | example -> x1 nout0 nout1 vdd inv0
-
-		*/
-			fprintf(print_file, ".measure tran delay%d trig v(n0) val='0.5' cross=1 targ v(%s) val='0.5' cross=1\n",root -> label, pass_label );
-	} else {
-	
-	if(print_spice_netlist(print_file, root->left, pass_label,root->wire_l, r_unit, c_unit) != 0){
-		return -1;
-	}
-
-	if(root->wire_r != -1.0f){
-		if(print_spice_netlist(print_file, root->right, pass_label,root->wire_r, r_unit, c_unit) != 0){
-			return -1;
-		}
-	}
-
-	}
 
 
 	return 0;

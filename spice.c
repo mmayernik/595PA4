@@ -151,7 +151,7 @@ int custom_netlist(Node * root,double length_to_parent){
 
 	//Initialize Source Inverter
 	fprintf(Spicy_Boi, "xi_1 n0 ni_0 vdd inv0\n");
-	fprintf(Spicy_Boi, ".ic v(n0)=0"
+	fprintf(Spicy_Boi, ".ic v(n0)=0\n");
 
 	print_spice_netlist(Spicy_Boi, root, "ni_0", length_to_parent, 1.0000000000e-04, 2.0000000000e-19);
 
@@ -295,7 +295,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 			fprintf(print_file, "c%d_2 n%d_1 0 %le \n", root->label, root->label, length_to_parent * c_unit);
 			
 			sprintf(pass_label,"n%d_1", root->label);
-
+			fprintf(print_file,".ic v(%s)=1\n",pass_label);
 	}
 
 	//Is current node a sink?
@@ -315,7 +315,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 
 			}
 			
-			fprintf(print_file,".ic v(n%d_1)=1\n",root->label);
+			//fprintf(print_file,".ic v(n%d_1)=1\n",root->label);
 
 			if(((root->polarity)% 2) == 1){
 				fprintf(print_file, ".measure tran slew%d trig v(n%d_1) val='0.9' fall=1 targ v(n%d_1) val='0.1' fall=1\n",root->label,root->label,root->label );

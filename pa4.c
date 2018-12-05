@@ -20,7 +20,7 @@ void parameter_input_files(char* input1, char* input2, Bounds * bounds){
 
 	fscanf(fp1, "%le %le %le\n", &bounds -> inv_input_cap, &bounds -> inv_output_cap, &bounds -> inv_output_res);
 	fscanf(fp2, "%le %le\n", &bounds -> r, &bounds -> c);
-	
+	bounds->tau_const = 1.2;
 	fclose(fp1);
 	fclose(fp2);
 
@@ -419,7 +419,8 @@ Node * greedy_merge(Heaper ** heap, int * heap_size, Bucket ** bucket_list, Boun
     new_node = create_node(-1, 0, 0, 0);
     new_node -> left = min_dis -> node1;
     new_node -> right = min_dis -> node2;
-    merge_arcs(new_node, bounds->r, bounds->c); //merge arcs together
+    crazy_loop(new_node, bounds);
+    //merge_arcs(new_node, bounds->r, bounds->c); //merge arcs together
     despan_Node(bucket_list, min_dis -> node1, bounds); //create new spanning in buckets
     despan_Node(bucket_list, min_dis -> node2, bounds);
     span_Node(bucket_list, new_node, bounds);
@@ -592,13 +593,14 @@ void print_binary(FILE * fp, Node * head){
   }
   print_binary(fp, head->left);
   print_binary(fp, head-> right);
-  if(head -> label == -1){
-    int neg = -1;
-    fwrite(&neg, sizeof(neg), 1, fp);
+  if(head -> left != NULL){
+  	int label = -1;	
+    fwrite(&(label), sizeof(label), 1, fp);
     fwrite(&(head -> wire_l), sizeof(head -> wire_l), 1, fp);
     fwrite(&(head -> wire_r), sizeof(head -> wire_r), 1, fp);
     fwrite(&(head -> x), sizeof(head -> x), 1, fp);
-    fwrite(&(head -> y), sizeof(head -> y), 1, fp);	   
+    fwrite(&(head -> y), sizeof(head -> y), 1, fp);
+    fwrite(&(head -> parallel), sizeof(head -> parallel), 1, fp);
   }else{
     fwrite(&(head -> label), sizeof(head -> label), 1, fp);
     fwrite(&(head -> c), sizeof(head -> c), 1, fp);

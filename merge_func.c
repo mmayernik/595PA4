@@ -8,6 +8,7 @@ Node * create_node(int label, double x, double y, double c){
   Node * node =  malloc(sizeof(Node));
   node -> label = label;
   node -> c = c;
+  node -> r = 0;
   node -> next = NULL;
   node -> left = NULL;
   node -> right = NULL;
@@ -91,7 +92,7 @@ void post_order_len(FILE * fp, Node * head){
   }
   post_order_len(fp, head -> left);
   post_order_len(fp, head -> right);
-  if(head -> label == -1){
+  if(head -> left != NULL){
     fprintf(fp, "(%le %le)\n", head -> wire_l, head -> wire_r);
   }
   else{
@@ -208,6 +209,7 @@ void merge_arcs(Node * n, double r, double c){
   det_mvalues((n -> left) -> m_array, (n -> right) -> m_array, n -> wire_l, n -> wire_r, n -> m_array);
   n -> c  = (n->left) -> c + (n -> right) -> c + (n->wire_l + n->wire_r)*c;
   n -> t = (n-> right) -> t + n -> wire_r * r * ((n->right)->c + c*n->wire_r/2.0);
+  n -> r = (n ->left) -> r + (n->right)->r + (n->wire_l + n->wire_r)*r;
 }
 
 void determine_shortest(double * point, double * m){
@@ -270,12 +272,24 @@ void get_xy(Node * head, int * count){
 }
 
 void insert_source(Node ** head){
-  Node * bnode = create_node(-1, 0, 0, -1); //MUST MAKE THIS have the CAP for a buffer at some point 
+  Node * bnode = create_node(-1, 0, 0, -1); //MUST MAKE THIS have the CAP for a buffer at some point
+  //Node * bnode2 = create_node(-1, 0, 0, -1);
   Node* snode = create_node(-1, 0, 0, -1); //source node
+  
   snode->left = bnode;
-  bnode->left = *head;
+  bnode->left = *head; 
+  //bnode2->left = *head;
+  
   bnode->parallel = 1;
+  //bnode2->parallel = 1;
   snode->parallel = 1;
+
+  /*
+  bnode->wire_l = snode->wire_l / 3;
+  bnode2->wire_l = snode->wire_l / 3;
+  snode->wire_l = snode->wire_l - bnode->wire_l - bnode2->wire_l;
+  */
+  
   *head = snode;
 }
 
@@ -389,9 +403,7 @@ void crazy_loop(Node * head, Bounds * bounds){
 	insert_i(&head, head->left, bounds);
       }
     merge_arcs(head, bounds->r, bounds->c); 
-  }
-						 
-  
+  }					      
 }
 
 bool need_i(Node* head, Bounds * bounds){
@@ -412,34 +424,100 @@ double calc_tau(Node * n, double wire_len, Bounds * bounds){
   double total_r = wire_r; //+ n->r;
   double total_c = wire_c + n->c;
   double tau = bounds->tau_const * total_r * total_c;
+  printf("%le %le %le \n", total_r, total_c, bounds->tau_const);
   return tau;
 }
 
 void insert_i(Node ** head, Node * child, Bounds * bounds){
   
   Node * i = create_node(-1, 0, 0, bounds->inv_output_cap);
+  i->r = bounds->inv_output_res;
   i->left = child;
   if(i->left == (*head)->left){
     (*head)->left = i;
     i->wire_l = i_wire(*head, bounds);
-    
+    if((*head)->wire_l < i->wire_l){
+      i->wire_l = (*head)->wire_l; 
+    }
   }
   else{
     (*head)->right = i;
     i->wire_r = i_wire(*head, bounds);
+    if((*head)->wire_r < i->wire_l){
+      i->wire_l = (*head)->wire_r; 
+    }
   }
-  
-  //UPDATE HEADS RESISTANCE AND CAPACITANCE
 }
 
 double i_wire(Node * head, Bounds * bounds){
   double r = bounds->r;
   double C = bounds->c;
   double cn = head->c;
-  double rn = 1; //head->r; //FIXXXX
+  double rn = head->r;
   double a = r * C / 2;
   double b = cn * r + C * rn /2;
   double c = rn * cn - 100 * pow(10, -12) / bounds->tau_const;
   double L = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
   return L;
+}
+
+void i_loco(Node * i, Node * parent, Node * child, double length, Bounds * bounds){
+  //determines location for the buffer to be placed at
+  int point_num = _choose_pt(child, parent -> m_array);
+  double start[4] = {child ->m_array[0+point_num], child -> m_array[0+point_num],
+		     child -> m_array[2+point_num] ,child -> m_array[2+point_num]};
+  point_num = _choose_pt(parent, start);
+  double end[4] = {parent->m_array[0+point_num], parent -> m_array[0+point_num],
+		   parent -> m_array[2+point_num], parent -> m_array[2+point_num]};
+
+  //convert the intercepts to x and y for simplicity of calculations 
+  double s_x = (start[0] - start[2])/2.0;
+  double s_y = (start[0] + start[2])/2.0;
+  double d_x = (end[0] - end[2])/2.0;
+  double d_y = (end[0] + end[2])/2.0;
+
+  double len_x = d_x - s_x;
+  double len_y = d_y - s_y;
+  //as far as we can go on x
+  if(labs(len_x) < length){
+    //x point is the x point of the parent
+    //and go on y
+    i->x = d_x;
+    length = length - labs(len_x);
+    if(len_y < 0){
+      i->y = s_y - length;
+    }
+    else{
+      i->y = s_y + length;
+    }
+  }
+  else{
+    //x point is point of child - x
+    i->y = s_y;
+    if(len_x < 0) {
+      i->x = s_x - length;
+    }
+    else{
+      i->x = s_x + length;
+    }
+  }
+  i -> m_array[0] = i -> m_array[1] = (i -> y + i -> x);
+  i -> m_array[2] = i -> m_array[3] = (i -> y - i -> x);
+  // ^ final update of m array
+}
+
+
+int _choose_pt(Node * source, double * dest){
+  //returns 0 if first point in source is closer to destination curve
+  //returns 1 if second point is
+  double p1[4] = {source->m_array[0], source -> m_array[0],source -> m_array[2] ,source -> m_array[2]};
+  double p2[4] =  {source ->m_array[1], source -> m_array[1],source -> m_array[3] ,source -> m_array[3]};
+  double p1_dist = det_len(p1, dest);
+  double p2_dist = det_len(p2, dest);
+
+  if(p1_dist < p2_dist){
+    return 0;
+  }else{
+    return 1;
+  }
 }

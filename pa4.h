@@ -9,7 +9,7 @@
  */
 typedef struct _Node{
   int label;
-  double x, y, wire_l, wire_r, c, t;
+  double x, y, wire_l, wire_r, c, t, r;
   double m_array[4];
   struct _Node * right;
   struct _Node * left;
@@ -134,5 +134,6 @@ bool need_i(Node* head, Bounds * bounds);
 double calc_tau(Node * n, double wire_len, Bounds * bounds);
 void insert_i(Node ** head, Node * child, Bounds * bounds);
 double i_wire(Node * head, Bounds * bounds);
-
+int _choose_pt(Node * source, double * dest);
+void i_loco(Node * i, Node * parent, Node * child, double length, Bounds * bounds);
 #endif

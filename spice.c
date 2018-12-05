@@ -152,7 +152,7 @@ int custom_netlist(Node * root,double length_to_parent){
 	//Initialize Source Inverter
 	fprintf(Spicy_Boi, "xi_1 n0 ni_0 vdd inv0\n");
 
-	print_spice_netlist(Spicy_Boi, root, "ni_0", 0.0f, 1.0000000000e-04, 2.0000000000e-19);
+	print_spice_netlist(Spicy_Boi, root, "ni_0", length_to_parent, 1.0000000000e-04, 2.0000000000e-19);
 
 	fprintf(Spicy_Boi, ".measure TRAN iavg AVG i(vdd) FROM=0.0n TO=3.0n\n.measure TRAN irms RMS i(vdd) FROM=0.0n TO=3.0n\n.end\n" );
 
@@ -165,13 +165,15 @@ int custom_netlist(Node * root,double length_to_parent){
 //Creates a test tree to build spice simulation
 Node * Build_Tree(){
 
-	Node * source = create_node(0, 0, 0, 0);
+	Node * source = create_node(0, 0, 0, 34.0f * FEMTO);
 
 	Node * temp;
 
 	Node * last;
 
 	last = source;
+
+	 
 
 	
 	/*
@@ -355,7 +357,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 
 	if((root->right == NULL)){
 			//This is an ending node. Therefore, place capacitor.
-			fprintf(print_file, "c%d_3 n%d_1 0 %le \n", root->label, root->label, root->c);
+			fprintf(print_file, "c%d_3 %s 0 %le \n", root->label, input_label, root->c);
 
 		/*
 

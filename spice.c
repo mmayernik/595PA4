@@ -50,7 +50,7 @@
 /*
 	The big-daddy main function for all your spice-y needs.
 */
-double * simulate_netlist(Node * root){
+double * simulate_netlist(Node * root, double length_to_parent){
 
 	//1. Convert filename to spice netlist - Done
 			char system_call[255];
@@ -62,7 +62,7 @@ double * simulate_netlist(Node * root){
 				fprintf(stdout, "Beginning SPICE test-------------\n" );
 				fprintf(stdout, "Step 1: Convert topology to SPICE\n" );
 
-				status = create_spice_files(root);
+				status = create_spice_files(root, length_to_parent);
 
 				fprintf(stdout, "Status return code: %d\n", status);
 
@@ -71,7 +71,7 @@ double * simulate_netlist(Node * root){
 					fprintf(stdout, "Passed SPICE conversion. Spicy_boi is satisfied\n" );
 				}
 			} else {
-				status = create_spice_files(root);
+				status = create_spice_files(root, length_to_parent);
 			}
 
 			//Print Error and return
@@ -116,9 +116,9 @@ double * simulate_netlist(Node * root){
 	1. Write Header
 
 */
-int create_spice_files(Node * root){
+int create_spice_files(Node * root,double length_to_parent){
 
-	return custom_netlist(root);
+	return custom_netlist(root, length_to_parent);
 
 }
 
@@ -131,7 +131,7 @@ int Spice_nelist_Koh(){
 	return system(system_call);
 }
 
-int custom_netlist(Node * root){
+int custom_netlist(Node * root,double length_to_parent){
 
 	//Open File
 	FILE * Spicy_Boi = fopen(RISING_FILE,"w+"); //fopen(filename, "w+");
@@ -174,7 +174,7 @@ Node * Build_Tree(){
 	last = source;
 
 	
-
+	/*
 	for(int i = 1; i < 10; i++){
 		
 		last->wire_l = 1850000;
@@ -195,7 +195,7 @@ Node * Build_Tree(){
 		last->polarity = i;
 		last
 		last = temp;
-
+*/
 	
 
 	return source;

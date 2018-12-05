@@ -150,7 +150,7 @@ int custom_netlist(Node * root){
 	fprintf(Spicy_Boi, SPICY_INIT);
 
 	//Initialize Source Inverter
-	fprintf(print_file, "xi_1 n0 ni_0 vdd inv0\n", root->label, i, input_label, root->label);
+	fprintf(Spicy_Boi, "xi_1 n0 ni_0 vdd inv0\n");
 
 	print_spice_netlist(Spicy_Boi, root, "ni_0", 0.0f, 1.0000000000e-04, 2.0000000000e-19);
 
@@ -171,21 +171,32 @@ Node * Build_Tree(){
 
 	Node * last;
 
-	int max_inverters = 100;
-
 	last = source;
+
+	
 
 	for(int i = 1; i < 10; i++){
 		
 		last->wire_l = 1850000;
 		last->wire_r = -1;
-		last -> parallel = 1;
+		last -> parallel = 0;
 		temp = create_node(i, 0, 0, 34.0f * FEMTO);
 		last->left = temp;
-		last->polarity = i;
+		last->polarity = 1;
 		last = temp;
 	}
 
+
+		last->wire_l = 1850000;
+		last->wire_r = -1;
+		last -> parallel = 0;
+		temp = create_node(i, 0, 0, 34.0f * FEMTO);
+		last->left = temp;
+		last->polarity = i;
+		last
+		last = temp;
+
+	
 
 	return source;
 }

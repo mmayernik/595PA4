@@ -132,7 +132,7 @@ void parameter_input_files(char* input1, char* input2, Bounds *);
 void crazy_loop(Node * head, Bounds * bounds);
 bool need_i(Node* head, Bounds * bounds);
 double calc_tau(Node * n, double wire_len, Bounds * bounds);
-void insert_i(Node ** head, Node * child, Bounds * bounds);
+void insert_i(Node * head, Node * child, Bounds * bounds);
 double i_wire(Node * head, Bounds * bounds);
 int _choose_pt(Node * source, double * dest);
 void i_loco(Node * i, Node * parent, Node * child, double length);

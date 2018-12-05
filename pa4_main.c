@@ -50,13 +50,13 @@ int main(int argc, char ** argv){
   //int tot_len = 0;
   //total_wire_len(head, &tot_len);
   //printf("total length: %d\n", tot_len);
-  //print_tree(head);
+  print_tree(head);
   //print output
   post_order_len(out_fp1, head);
   //print_spicey(out_fp2, head);
   print_binary(out_fp2, head);
   //post_order_xy(out_fp2, head);
-  
+  printf("%le\n", head -> wire_r);
   free(bounds);
   destroy_tree(head);
  

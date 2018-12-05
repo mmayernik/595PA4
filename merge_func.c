@@ -230,6 +230,7 @@ void assign_xy(Node * child, Node * parent, double len, int * count){
   if(child -> label != -1){
     return;
   }
+  if(child -> parallel == 0){ //check if it is buffer
   if(len == 0){
      child -> x = parent -> x;
      child -> y = parent -> y;
@@ -247,6 +248,9 @@ void assign_xy(Node * child, Node * parent, double len, int * count){
   child -> label = *count;
   assign_xy(child -> left, child, child -> wire_l, count);
   assign_xy(child -> right, child, child -> wire_r, count);
+  }else{
+    assign_xy(child -> left, child, child -> wire_l, count);
+  }
 }
 
 void get_xy(Node * head, int * count){
@@ -272,12 +276,16 @@ void get_xy(Node * head, int * count){
 }
 
 void insert_source(Node ** head){
-  Node * bnode = create_node(-1, 0, 0, -1); //MUST MAKE THIS have the CAP for a buffer at some point
   Node* snode = create_node(-1, 0, 0, -1); //source node
-  snode->left = bnode;
-  bnode->left = *head; 
-  bnode->parallel = 1;
   snode->parallel = 1;
+  if((*head) -> polarity == 0){//use buffer
+    Node * bnode = create_node(-1, 0, 0, -1); //MUST MAKE THIS have the CAP for a buffer at some point
+    snode->left = bnode;
+    bnode->left = *head; 
+    bnode->parallel = 1;
+  }else{//only inverter at source
+    snode -> left = *head;
+  }
   *head = snode;
 }
 
@@ -355,107 +363,111 @@ void print_pre_order(Node * head){
 //PA 4 WELCOME TO THE JUNGLE ///
 
 void crazy_loop(Node * head, Bounds * bounds){
-  //find length for zero skew
+  //This function is used when merging two nodes together
+  //the while loop is used to itteratively check if more
+  //inverters are needed and inserts accordingly
   merge_arcs(head, bounds->r, bounds->c);
   double max_tau = 0.8 * 100 * pow(10, -12);
   double tau_L = calc_tau(head->left, head->wire_l, bounds);
   double tau_R = calc_tau(head->right, head->wire_r, bounds);
-  printf("this is taul: %le taur: %le\n", tau_L, tau_R);
-  //printf("%le, %le\n", head -> wire_l,  head -> wire_r);
+  printf("this begining taul: %le taur: %le\n", tau_L, tau_R);
   while(need_i(head, bounds)){
-    //left tau
-    printf("we inserted oh no!\n");
+    printf("itterate\n");
+    //if insertion is required do the following
+    //check if the left side does not meet the transition time max insert node if so
     if(tau_L >= max_tau){
-      insert_i(&head, head->left, bounds);
+      insert_i(head, head->left, bounds);
     }
-    //right tau 
+    //check if the left side does not meet the transition time max insert node if so
     if(tau_R >= max_tau){
-      insert_i(&head, head->right, bounds);
+      insert_i(head, head->right, bounds);
     }
-    //merge
+    //if neither side is over limit insert repeater on the one with largest tau value
     if(tau_R < max_tau && tau_L < max_tau){
       if(tau_R > tau_L){
-	insert_i(&head, head->right, bounds);
+	insert_i(head, head->right, bounds);
       }
       else{
-	insert_i(&head, head->left, bounds);
+	insert_i(head, head->left, bounds);
       }
     }
+    //remerge with buffers as child nodes and calc new tau values for left and right branch
     merge_arcs(head, bounds-> r, bounds->c);
     tau_L = calc_tau(head->left, head->wire_l, bounds);
     tau_R = calc_tau(head->right, head->wire_r, bounds);
     printf("this is taul: %le taur: %le\n", tau_L, tau_R);
   }
-  //FINAL POLARITY CHECK 
+  //FINAL POLARITY CHECK
+  //insert inverter on the side with the largest tranistion time if polarity needs to be fixed
   if(head->right->polarity != head->left->polarity){
-     printf("we inserted oh no\n");
     if(tau_R > tau_L){
-	insert_i(&head, head->right, bounds);
+	insert_i(head, head->right, bounds);
       }
       else{
-	insert_i(&head, head->left, bounds);
+	insert_i(head, head->left, bounds);
       }
     merge_arcs(head, bounds->r, bounds->c); 
-  }					      
+  }
+  head -> polarity = (head -> left) -> polarity;
 }
 
 bool need_i(Node* head, Bounds * bounds){
+  //checks to see if transistion time is over limit
+  //returns true if so
   double tau = calc_tau(head, 0, bounds);
-  printf("r: %le\n", head -> r* head -> c);
   printf("plz make sense %le %le\n",  0.8 * 100 * pow(10, -12), tau);
   if(tau > 0.8 * 100 * pow(10, -12)){
-    printf("tau is a biggie\n");
       return true;
-    }
-  /*if(head->left->polarity != head->right->polarity){
-    return true;
-    }*/
+  }
   return false;
 }
 
 double calc_tau(Node * n, double wire_len, Bounds * bounds){
-  //tau = nrc
+  //this function calculates the tau value of a node and the
+  //wire that connects to the node
   double wire_r = bounds->r * wire_len;
   double wire_c = bounds->c * wire_len / 2;
   double total_r = wire_r + n -> r; //+ n->r;
   double total_c = wire_c + n->c;
   double tau = bounds->tau_const * total_r * total_c;
-  //printf("%le\n", tau);
-  //printf("%le %le %le \n", total_r, total_c, bounds->tau_const);
   return tau;
 }
 
-void insert_i(Node ** head, Node * child, Bounds * bounds){
+void insert_i(Node * head, Node * child, Bounds * bounds){
+  //this function insersts a node into branch of the parent node
   Node * i = create_node(-1, 0, 0, bounds->inv_output_cap);
   i-> parallel = 1;
   i-> polarity = child->polarity == 1 ? 0 : 1;  
   i->r = 0;//bounds->inv_output_res;
   i->left = child;
-  if(i->left == (*head)->left){ //insert inverter on left of parent node
-    (*head)->left = i;
-    i->wire_l = i_wire(*head, bounds);
-    if((*head)->wire_l < i->wire_l){ //see if the length is too big
-      i->wire_l = (*head)->wire_l; 
+  if(i->left == head->left){ //insert inverter on left of parent node
+    head->left = i;
+    i->wire_l = i_wire(head -> left, bounds);
+    if(head->wire_l < i->wire_l){ //see if the length is too big
+      i->wire_l = head->wire_l; 
     }
   }
   else{//insert inverter on right of parent node
-    (*head)->right = i;
-    i->wire_l = i_wire(*head, bounds);
-    if((*head)->wire_r < i->wire_l){
-      i->wire_l = (*head)->wire_r; 
+    head->right = i;
+    i->wire_l = i_wire(head -> right, bounds);
+    if(head->wire_r < i->wire_l){
+      i->wire_l = head->wire_r; 
     }
   }
-  i_loco(i, *head, child, i-> wire_l);
+  i_loco(i, head, child, i-> wire_l); //calculate the location of the buffer
+  printf("%le\n", i->wire_l);
 }
 
 double i_wire(Node * head, Bounds * bounds){
+  //this function determines the distance L a inverter can be
+  //inserted from the downstream node such that the transition time is met
   double r = bounds->r;
   double C = bounds->c;
   double cn = head->c;
   double rn = head->r;
   double a = r * C / 2;
   double b = cn * r + C * rn /2;
-  double c = rn * cn - 100 * pow(10, -12) / bounds->tau_const;
+  double c = rn * cn - .79 * 100 * pow(10, -12) / bounds->tau_const;
   double L = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
   return L;
 }

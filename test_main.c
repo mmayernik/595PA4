@@ -28,7 +28,8 @@ int main(){
   child1.c = 34*pow(10,-14);
   child1.r = 0.8 * 50 * pow(10, -12) / child1.c;
   child1.polarity = 0;
-
+  child1.t = 0;
+  
   int c2_x_1 = 4*pow(10,6);
   int c2_y_1 = 4*pow(10,6);
   int c2_x_2 = 4*pow(10,6);
@@ -38,16 +39,31 @@ int main(){
   child2.m_array[2] = c2_y_1-c2_x_1;
   child2.m_array[3] = c2_y_1-c2_x_1;
   child2.c = 34*pow(10,-14);
+  child2.t = 0;
   child2.r = 0.8 * 50 * pow(10, -12) / child2.c;
   child2.polarity = 0;
 
   head.left = &child1;
   head.right = &child2;
-
-  crazy_loop(&head, &bounds);
-
-
-
+  head.wire_l = 0;
+  merge_arcs(&head, bounds.r, bounds.c);
+  double new_len = i_wire(&child2, &bounds);
+  printf("%le %le\n", head.wire_l, new_len);
+  double old = calc_tau(&child2, head.wire_r, &bounds);
+  double new = calc_tau(&child2, new_len, &bounds);
+  printf("old: %le, new: %le\n",old ,new);
+  insert_i(&head, &child2, &bounds);
+  insert_i(&head, &child1, &bounds);
+  if(need_i(&head, &bounds)){
+    printf("this is a problem\n");
+  }
+  printf("left %le, right %le\n", head.left -> wire_l,  head.right -> wire_l);
+  merge_arcs(&head, bounds.r, bounds.c);
+  printf("%le, %le\n", head.wire_l, head.wire_r);
+  printf("%le\n", calc_tau(&head, 0, &bounds));
+  if(need_i(&head, &bounds)){
+    printf("this is a problem\n");
+  }
 
   
   /*Testing i_loco and _choose_pt

@@ -1,29 +1,17 @@
-#define _GNU_SOURCE         /* See feature_test_macros(7) */
-#include "pa4.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/syscall.h>
-#include <unistd.h>
+
+//Specify SPICE Data Structs and constants
+#define SPICE_HEADER "* inverter characterization\n.options temp=75\n.tran 0.001n 2.2n 0.0n 0.001n\n.include tuned_45nm_HP.pm\n.include clkinv0.subckt\nvdd vdd 0 1.000"
+
+
+
+
 
 //Spice Primary Functions
+double * simulate_netlist();
 
-int custom_netlist(Node * root,double length_to_parent, int * size);
+int create_spice_files(char * filename);
 
-int create_spice_files(Node * root,double length_to_parent, int * size)
-
-double * simulate_netlist(Node * root, double length_to_parent);
 
 //Spice Helper Functions
-
-int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, double length_to_parent, double r_unit, double c_unit);
-
-void post_order_traversal(Node * root, double * array, int * index, double * min, double * max)
-
-int Spice_nelist_Koh();
-
-double * parse_results(int size);
-
-Node * Build_Tree();
 
 

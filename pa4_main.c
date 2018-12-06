@@ -37,12 +37,12 @@ int main(int argc, char ** argv){
 
   //create list of sinks
   Node * head = create_array(in_fp, bounds);
-  int count = bounds -> dim;
+  node_count = bounds -> dim;
   //preform merging
   greedy_master(bounds, &head);
 
   //calculate xy coords
-  get_xy(head,&count);
+  get_xy(head);
   insert_source(&head);
   //verify topology
   //int count = 0;
@@ -50,7 +50,7 @@ int main(int argc, char ** argv){
   //int tot_len = 0;
   //total_wire_len(head, &tot_len);
   //printf("total length: %d\n", tot_len);
-  print_tree(head);
+  //print_tree(head);
   //print output
   post_order_len(out_fp1, head);
   //print_spicey(out_fp2, head);
@@ -86,6 +86,5 @@ void print_tree(Node * head){
   }
   print_tree(head -> left);
   print_tree(head -> right);
-  printf("label: %d  polarity: %d  ", head -> label, head -> polarity);
-  printf("parallel: %d\n", head->parallel);
+  printf("label: %d  polarity: %d  \n", head -> label, head -> polarity);
 }

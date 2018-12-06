@@ -20,7 +20,7 @@ void parameter_input_files(char* input1, char* input2, Bounds * bounds){
 
 	fscanf(fp1, "%le %le %le\n", &bounds -> inv_input_cap, &bounds -> inv_output_cap, &bounds -> inv_output_res);
 	fscanf(fp2, "%le %le\n", &bounds -> r, &bounds -> c);
-	bounds->tau_const = 2.7;
+	bounds->tau_const = 5;
 	fclose(fp1);
 	fclose(fp2);
 
@@ -417,6 +417,7 @@ Node * greedy_merge(Heaper ** heap, int * heap_size, Bucket ** bucket_list, Boun
   while(*heap_size > 0){ //condition here
     Heaper * min_dis = extract_loc(heap, heap_size, 0);
     new_node = create_node(-1, 0, 0, 0);
+    new_node -> label = ++node_count;//give node a number label
     new_node -> left = min_dis -> node1;
     new_node -> right = min_dis -> node2;
     crazy_loop(new_node, bounds);

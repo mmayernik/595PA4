@@ -3,7 +3,7 @@
 #include <math.h>
 #include "pa4.h"
 #include <stdbool.h>
-
+#include "spice.h"
 Node * create_node(int label, double x, double y, double c){
   Node * node =  malloc(sizeof(Node));
   node -> label = label;
@@ -226,7 +226,7 @@ void determine_shortest(double * point, double * m){
   }
 }
  
-void assign_xy(Node * child, Node * parent, double len, int * count){
+void assign_xy(Node * child, Node * parent, double len){
   if(child -> label != -1){
     return;
   }
@@ -244,23 +244,19 @@ void assign_xy(Node * child, Node * parent, double len, int * count){
     child -> x = ((child -> m_array)[0]-(child -> m_array)[2])/2.0;
     child -> y = ((child ->m_array)[0]+(child -> m_array)[2])/2.0;
   }
-  *count += 1;
-  child -> label = *count;
-  assign_xy(child -> left, child, child -> wire_l, count);
-  assign_xy(child -> right, child, child -> wire_r, count);
+  assign_xy(child -> left, child, child -> wire_l);
+  assign_xy(child -> right, child, child -> wire_r);
   }else{
-    assign_xy(child -> left, child, child -> wire_l, count);
+    assign_xy(child -> left, child, child -> wire_l);
   }
 }
 
-void get_xy(Node * head, int * count){
+void get_xy(Node * head){
   double p1[4] = {head -> m_array[0], head -> m_array[0], head -> m_array[2], head -> m_array[2]};
   double p2[4] = {head -> m_array[1], head -> m_array[1], head -> m_array[3], head -> m_array[3]};
   double source[4] = {0,0,0,0};
   double dist1 = det_len(p1, source);
   double dist2 = det_len(p2, source);
-  *count +=1;
-  head -> label = *count;
   if(dist1 > dist2){
   head -> m_array[0] = head -> m_array[1];
   head -> m_array[2] = head -> m_array[3];
@@ -271,8 +267,8 @@ void get_xy(Node * head, int * count){
   head -> x = ((head -> m_array)[1] - (head -> m_array)[3])/2.0;
   head -> y = ((head -> m_array)[1] + (head -> m_array)[3])/2.0;
 
-  assign_xy(head -> left, head, head -> wire_l, count);
-  assign_xy(head -> right, head, head -> wire_r, count);
+  assign_xy(head -> left, head, head -> wire_l);
+  assign_xy(head -> right, head, head -> wire_r);
 }
 
 void insert_source(Node ** head){
@@ -372,9 +368,9 @@ void crazy_loop(Node * head, Bounds * bounds){
   double max_tau = 0.8 * 100 * pow(10, -12);
   double tau_L = calc_tau(head->left, head->wire_l, bounds);
   double tau_R = calc_tau(head->right, head->wire_r, bounds);
-  printf("this begining taul: %le taur: %le\n", tau_L, tau_R);
+  //printf("this begining taul: %le taur: %le\n", tau_L, tau_R);
   while(need_i(head, bounds)){
-    printf("itterate\n");
+    //printf("itterate\n");
     //if insertion is required do the following
     //check if the left side does not meet the transition time max insert node if so
     if(tau_L >= max_tau){
@@ -397,7 +393,7 @@ void crazy_loop(Node * head, Bounds * bounds){
     merge_arcs(head, bounds-> r, bounds->c);
     tau_L = calc_tau(head->left, head->wire_l, bounds);
     tau_R = calc_tau(head->right, head->wire_r, bounds);
-    printf("this is taul: %le taur: %le\n", tau_L, tau_R);
+    //printf("this is taul: %le taur: %le\n", tau_L, tau_R);
   }
   //FINAL POLARITY CHECK
   //insert inverter on the side with the largest tranistion time if polarity needs to be fixed
@@ -417,7 +413,7 @@ bool need_i(Node* head, Bounds * bounds){
   //checks to see if transistion time is over limit
   //returns true if so
   double tau = calc_tau(head, 0, bounds);
-  printf("plz make sense %le %le\n",  0.8 * 100 * pow(10, -12), tau);
+  //printf("plz make sense %le %le\n",  0.8 * 100 * pow(10, -12), tau);
   if(tau > 0.8 * 100 * pow(10, -12)){
       return true;
   }
@@ -437,7 +433,8 @@ double calc_tau(Node * n, double wire_len, Bounds * bounds){
 
 void insert_i(Node * head, Node * child, Bounds * bounds){
   //this function insersts a node into branch of the parent node
-  Node * i = create_node(-1, 0, 0, bounds->inv_output_cap);
+  Node * i = create_node(-1, 0, 0, bounds->inv_input_cap);
+  i -> label = ++node_count;
   i-> parallel = 1;
   i-> polarity = child->polarity == 1 ? 0 : 1;  
   i->r = 0;//bounds->inv_output_res;
@@ -457,7 +454,10 @@ void insert_i(Node * head, Node * child, Bounds * bounds){
     }
   }
   i_loco(i, head, child, i-> wire_l); //calculate the location of the buffer
-  printf("%le\n", i->wire_l);
+  //i->t = simulate_netlist(child, i-> wire_l);
+  i->t = child -> t + i -> wire_l * (bounds -> r * bounds -> c) +
+   bounds -> inv_output_res * bounds -> inv_output_cap;
+  //printf("actual %le, fake: %le\n", i->t, temp);
 }
 
 double i_wire(Node * head, Bounds * bounds){
@@ -465,11 +465,11 @@ double i_wire(Node * head, Bounds * bounds){
   //inserted from the downstream node such that the transition time is met
   double r = bounds->r;
   double C = bounds->c;
-  double cn = head->c + bounds -> inv_input_cap;//include buffer params
-  double rn = head->r + bounds -> inv_input_cap;
-  double a = r * C / 2;
-  double b = cn * r + C * rn /2;
-  double c = rn * cn - .79 * 100 * pow(10, -12) / bounds->tau_const;
+  double cn = head->c + bounds -> inv_output_cap;//include buffer params
+  double rn = head->r + bounds -> inv_output_res;
+  double a = r * C/2;
+  double b = cn * r + C * rn/2;
+  double c = rn * cn - .97 * 100 * pow(10, -12) / bounds->tau_const;
   double L = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
   return L;
 }

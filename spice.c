@@ -50,12 +50,12 @@
 /*
 	The big-daddy main function for all your spice-y needs.
 */
-double simulate_netlist(Node * root, double length_to_parent){
+double simulate_netlist(Node * root, double length_to_parent,double r, double c){
 
 	//1. Convert filename to spice netlist - Done
 			char system_call[255];
 			int status;
-			int size;
+			int size = 0;
 			double * results;
 			
 
@@ -63,7 +63,7 @@ double simulate_netlist(Node * root, double length_to_parent){
 				fprintf(stdout, "Beginning SPICE test-------------\n" );
 				fprintf(stdout, "Step 1: Convert topology to SPICE\n" );
 
-				status = create_spice_files(root, length_to_parent,&size);
+				status = create_spice_files(root, length_to_parent,&size,r,c);
 
 				fprintf(stdout, "Status return code: %d\n", status);
 
@@ -114,6 +114,8 @@ double simulate_netlist(Node * root, double length_to_parent){
 		max = 0.0f;
 		min = DBL_MAX;
 		post_order_traversal(root, results, &idx, &min, &max);
+
+		free(results);
 		
 		return (max + min) / 2;
 
@@ -147,9 +149,9 @@ void post_order_traversal(Node * root, double * array, int * idx, double * min, 
 }
 
 
-int create_spice_files(Node * root,double length_to_parent, int * size){
+int create_spice_files(Node * root,double length_to_parent, int * size, double r, double c){
 
-	return custom_netlist(root, length_to_parent,size);
+	return custom_netlist(root, length_to_parent,size,r,c);
 
 }
 
@@ -162,7 +164,7 @@ int Spice_nelist_Koh(){
 	return system(system_call);
 }
 
-int custom_netlist(Node * root,double length_to_parent, int * size){
+int custom_netlist(Node * root,double length_to_parent, int * size, double r, double c){
 
 	
 
@@ -186,7 +188,7 @@ int custom_netlist(Node * root,double length_to_parent, int * size){
 	fprintf(Spicy_Boi, "xi_1 n0 ni_0 vdd inv0\n");
 	fprintf(Spicy_Boi, ".ic v(n0)=0\n");
 
-	print_spice_netlist(Spicy_Boi, root, "ni_0", length_to_parent, 1.0000000000e-04, 2.0000000000e-19, size);
+	print_spice_netlist(Spicy_Boi, root, "ni_0", length_to_parent, r, c, size);
 
 	fprintf(Spicy_Boi, ".measure TRAN iavg AVG i(vdd) FROM=0.0n TO=3.0n\n.measure TRAN irms RMS i(vdd) FROM=0.0n TO=3.0n\n.end\n" );
 

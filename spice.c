@@ -343,7 +343,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 		//For Delay Measurement
 		fprintf(print_file, "c%d_3 %s 0 %le \n", root->label, pass_label, root->c);
 		fprintf(print_file, ".measure tran delay%d trig v(n0) val='0.5' cross=1 targ v(%s) val='0.5' cross=1\n",root -> label, pass_label );
-		*size++;
+		*size = *size + 1;
 
 	} 
 	//Is current node a buffer?
@@ -363,7 +363,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 				fprintf(print_file, ".measure tran slew%d trig v(n%d_1) val='0.1' rise=1 targ v(n%d_1) val='0.9' rise=1\n",root->label,root->label,root->label );
 			}
 		
-		*size++;
+		*size = *size + 1;
 		fprintf(print_file, ".measure tran delay%d trig v(n0) val='0.5' cross=1 targ v(%s) val='0.5' cross=1\n",root -> label, pass_label );
 		
 	} 

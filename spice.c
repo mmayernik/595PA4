@@ -55,6 +55,7 @@ double * simulate_netlist(Node * root, double length_to_parent){
 	//1. Convert filename to spice netlist - Done
 			char system_call[255];
 			int status;
+			int size;
 			double * results;
 			
 
@@ -62,7 +63,7 @@ double * simulate_netlist(Node * root, double length_to_parent){
 				fprintf(stdout, "Beginning SPICE test-------------\n" );
 				fprintf(stdout, "Step 1: Convert topology to SPICE\n" );
 
-				status = create_spice_files(root, length_to_parent);
+				status = create_spice_files(root, length_to_parent,&size);
 
 				fprintf(stdout, "Status return code: %d\n", status);
 
@@ -71,7 +72,7 @@ double * simulate_netlist(Node * root, double length_to_parent){
 					fprintf(stdout, "Passed SPICE conversion. Spicy_boi is satisfied\n" );
 				}
 			} else {
-				status = create_spice_files(root, length_to_parent);
+				status = create_spice_files(root, length_to_parent,&size);
 			}
 
 			//Print Error and return
@@ -98,17 +99,24 @@ double * simulate_netlist(Node * root, double length_to_parent){
 
 			if(DEBUG_SPICE){
 				fprintf(stdout, "Step 3: Parse Simulation\n" );
-				results = parse_results();
+				results = parse_results(size);
 				
 			} else {
 				//status = system(system_call);
-				results = parse_results();
+				results = parse_results(size);
 			}
 
-			
-			
+	//4. traversal for min and max
+		double max,min;
+		int index;
 
-			return results;
+		index = 0;
+		max = 0.0f;
+		min = DBL_MAX;
+		post_order_traversal(root, results, &index, &min, &max);
+		
+		return max + min / 2;
+
 }
 
 /*
@@ -116,9 +124,32 @@ double * simulate_netlist(Node * root, double length_to_parent){
 	1. Write Header
 
 */
-int create_spice_files(Node * root,double length_to_parent){
 
-	return custom_netlist(root, length_to_parent);
+void post_order_traversal(Node * root, double * array, int * index, double * min, double * max){
+	
+	if(root == NULL){
+		return;
+	}
+
+	if(!((root -> parallel == 0) && (root -> left == NULL) && (root -> right == NULL)) || (root -> parallel > 0)){	
+		post_order_traversal(root->left, array, index,min,max);
+		post_order_traversal(root->right, array, index,min,max);
+	} else {
+		if(*max < (root->t + array[*index])){
+			*max = root->t + array[*index];
+		} 
+
+		if(*min > (root->t + array[*index])){
+			*min = root->t + array[*index];
+		} 
+
+	}
+}
+
+
+int create_spice_files(Node * root,double length_to_parent, int * size){
+
+	return custom_netlist(root, length_to_parent,size);
 
 }
 
@@ -131,7 +162,9 @@ int Spice_nelist_Koh(){
 	return system(system_call);
 }
 
-int custom_netlist(Node * root,double length_to_parent){
+int custom_netlist(Node * root,double length_to_parent, int * size){
+
+	
 
 	//Open File
 	FILE * Spicy_Boi = fopen(RISING_FILE,"w+"); //fopen(filename, "w+");
@@ -153,7 +186,7 @@ int custom_netlist(Node * root,double length_to_parent){
 	fprintf(Spicy_Boi, "xi_1 n0 ni_0 vdd inv0\n");
 	fprintf(Spicy_Boi, ".ic v(n0)=0\n");
 
-	print_spice_netlist(Spicy_Boi, root, "ni_0", length_to_parent, 1.0000000000e-04, 2.0000000000e-19);
+	print_spice_netlist(Spicy_Boi, root, "ni_0", length_to_parent, 1.0000000000e-04, 2.0000000000e-19, size);
 
 	fprintf(Spicy_Boi, ".measure TRAN iavg AVG i(vdd) FROM=0.0n TO=3.0n\n.measure TRAN irms RMS i(vdd) FROM=0.0n TO=3.0n\n.end\n" );
 
@@ -205,15 +238,17 @@ Node * Build_Tree(){
 }
 
 //Given an output spice file from the MACRO, parse the results from the macro.
-double * parse_results(){
+double * parse_results(int size){
 
 	//Open Results file
 	FILE * SPICY_BOI = fopen("Simulation_Return.txt", "r");
 
 	//Initialize Double Array
 	int n = 4;
-	double * results = (double *)malloc(n * sizeof(double));
+	double * results = (double *)malloc(size * sizeof(double));
+	
 	char start_line[255];
+	int i = 0;
 	char ch;
 	char d;
 	double temp_max = 0.0f;
@@ -226,30 +261,35 @@ double * parse_results(){
 	while((ch = getc(SPICY_BOI)) != EOF){
     	fseek(SPICY_BOI, -1, SEEK_CUR);
     	fscanf(SPICY_BOI, "%s\n",start_line);
-    	//fprintf(stdout, "%s\n",start_line );
-    	if(strcmp(start_line, "irms") == 0){
-    		//Found it!
-    		fscanf(SPICY_BOI, "= %le\n",&results[0]);
-    		//fprintf(stdout, "Results: %le\n",results[0]);
-    	}
+    	
 
 
     	d = start_line[5];
     	start_line[5] = '\0';
     	if(strcmp(start_line, "delay") == 0){
     		fscanf(SPICY_BOI, "= %le\n",&temp_max);
-    		max_delay = (temp_max > max_delay) ? temp_max : max_delay;
-		min_delay = (temp_max < min_delay) ? temp_max : min_delay;
+    		results[i] = temp_max;
+    	}
+	/*
+
+	//fprintf(stdout, "%s\n",start_line );
+    	if(strcmp(start_line, "irms") == 0){
+    		//Found it!
+    		fscanf(SPICY_BOI, "= %le\n",&results[0]);
+    		//fprintf(stdout, "Results: %le\n",results[0]);
     	}
     	start_line[4] = '\0';
     	if((strcmp(start_line, "slew") == 0)){ //|| (strcmp(start_line, "rslew") == 0) || (strcmp(start_line, "fslew") == 0)){
     		fscanf(SPICY_BOI, "= %le\n",&temp_max);
     		max_slew = (temp_max > max_slew) ? temp_max : max_slew;
     	}
+	*/
 
     	//fscanf(SPICY_BOI, "%s\n",start_line);
     
    }
+
+   /*
    fprintf(stdout, "Max Delay : %le\n",max_delay );
    fprintf(stdout, "Min Delay : %le\n", min_delay);
    fprintf(stdout, "Tree Skew : %le\n", max_delay - min_delay);
@@ -257,7 +297,7 @@ double * parse_results(){
 
    	results[1] = max_delay;
 	results[2] = min_delay;
-   	results[3] = max_slew;
+   	results[3] = max_slew;*/
 	
 
 
@@ -277,7 +317,7 @@ double * parse_results(){
 }
 
 //Primary function to print the spice netlist from topology. Build Later for optimizations.
-int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, double length_to_parent, double r_unit, double c_unit){
+int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, double length_to_parent, double r_unit, double c_unit, int * size){
 	char pass_label[255] = "";
 
 	strcpy(pass_label, input_label);
@@ -303,7 +343,7 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 		//For Delay Measurement
 		fprintf(print_file, "c%d_3 %s 0 %le \n", root->label, pass_label, root->c);
 		fprintf(print_file, ".measure tran delay%d trig v(n0) val='0.5' cross=1 targ v(%s) val='0.5' cross=1\n",root -> label, pass_label );
-		
+		*size++;
 
 	} 
 	//Is current node a buffer?
@@ -322,7 +362,8 @@ int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, doub
 			} else {
 				fprintf(print_file, ".measure tran slew%d trig v(n%d_1) val='0.1' rise=1 targ v(n%d_1) val='0.9' rise=1\n",root->label,root->label,root->label );
 			}
-
+		
+		*size++;
 		fprintf(print_file, ".measure tran delay%d trig v(n0) val='0.5' cross=1 targ v(%s) val='0.5' cross=1\n",root -> label, pass_label );
 		
 	} 

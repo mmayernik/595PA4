@@ -8,9 +8,9 @@
 
 //Spice Primary Functions
 
-int custom_netlist(Node * root,double length_to_parent);
+int custom_netlist(Node * root,double length_to_parent, int * size);
 
-int create_spice_files(Node * root,double length_to_parent);
+int create_spice_files(Node * root,double length_to_parent, int * size)
 
 double * simulate_netlist(Node * root, double length_to_parent);
 
@@ -18,9 +18,11 @@ double * simulate_netlist(Node * root, double length_to_parent);
 
 int print_spice_netlist(FILE* print_file, Node * root, char *  input_label, double length_to_parent, double r_unit, double c_unit);
 
+void post_order_traversal(Node * root, double * array, int * index, double * min, double * max)
+
 int Spice_nelist_Koh();
 
-double * parse_results();
+double * parse_results(int size);
 
 Node * Build_Tree();
 
